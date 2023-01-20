@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Buzzzon</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+
+    <style>
+        body {
+            background-color:  #f5f5f5
+        }
+
+        .panel-default > .panel-heading {
+            color: #333;
+            background-color: #a0c1ff;
+            border-color: #a0c1ff;
+        }
+
+        .panel-default {
+            border-color: #a0c1ff;
+        }
+
+        .buzzzon-logo {
+            max-height: 220px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 70px;
+        }
+
+        .panel-body {
+            background-color: #cbdbf294;
+        }
+        .btn-primary, .btn-primary:hover, .btn-primary:active {
+            background-color: darkslategray;
+            border: none;
+            display: block;
+            margin: auto;
+        }
+
+        .panel-heading {
+            background-color: darkslategray!important;
+            color: white!important;
+        }
+
+    </style>
+</head>
+<body>
+<img src="/static/images/logo.png" class="buzzzon-logo">
+<div class="container">
+    <div class="row"  style="margin-top: 20px">
+        <div class="col-md-4 col-md-offset-2">
+            <div class="panel panel-default">
+                <!-- Default panel contents -->
+                <div class="panel-heading">Login</div>
+                <div class="panel-body" style="height: 285px">
+                    <div class="col-md-10 col-md-offset-1">
+                        <p>email:</p>
+                        <input name="email" class="form-control" type="text" id="login_email">
+                        <p>password:</p>
+                        <input name="password" class="form-control" type="password" id="login_pass">
+                        <button onclick="loginFunc()" class="btn btn-primary" style="margin-top: 20px"> Login</button>
+                        <p style="color: darkred" id="login_error"></p>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel panel-default">
+                <!-- Default panel contents -->
+                <div class="panel-heading">Register</div>
+                <div class="panel-body">
+                    <div class="col-md-10 col-md-offset-1">
+                        <p>email:</p>
+                        <input name="email" class="form-control" type="text" id="register_email">
+                        <p>password:</p>
+                        <input name="password1" class="form-control" type="password" id="register_pass_1">
+                        <p>repeat-password:</p>
+                        <input name="password2" class="form-control" type="password" id="register_pass_2">
+                        <button onclick="registerFunc()" class="btn btn-primary" style="margin-top: 20px">Register
+                        </button>
+                        <p style="color: darkred" id="register_error"></p>
+                        <p style="color: green" id="register_success"></p>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+
+</body>
+<script>
+    var csrf_val = document.cookie.split('csrftoken=')[1];
+    if ($.cookie("userToken")) {
+        window.location.href = '/rooms'
+    }
+    var registerFunc = function () {
+        var email = $('#register_email').val();
+        var password1 = $('#register_pass_1').val();
+        var password2 = $('#register_pass_2').val();
+        var request_data = {
+            'email': email,
+            'password1': password1,
+            'password2': password2
+        };
+        $.ajax({
+            url: '/rest-auth/registration/', type: 'POST', data: request_data,
+            headers: {'X-CSRFToken': csrf_val},
+            success: function (data) {
+                $('#register_error')[0].innerText = "";
+                $("#register_success")[0].innerText = "User has Registered Successfully."
+            }, error: function (err) {
+                $("#register_success")[0].innerText = "";
+                $('#register_error')[0].innerText = err.responseText;
+            }
+        })
+    };
+
+    var loginFunc = function () {
+        var email = $('#login_email').val();
+        var password = $('#login_pass').val();
+        var request_data = {
+            'email': email,
+            'password': password,
+        };
+        var ajax_req;
+        ajax_req = $.ajax({
+            url: '/rest-auth/login/', type: 'POST', data: request_data,
+            headers: {'X-CSRFToken': csrf_val},
+            success: function (data) {
+                var date = new Date();
+                var minutes = 3000;
+                date.setTime(date.getTime() + (minutes * 60 * 1000));
+                $.cookie("userToken", data.key, {expires: date, path: '/'});
+                window.location.href = '/rooms'
+            }, error: function (err) {
+                $('#login_error')[0].innerText = "ERROR In Login...";
+            }
+        });
+    };
+
+</script>
+</html>

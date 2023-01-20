@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Buzzzon</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+</head>
+<body>
+this is our perfect view
+</body>
+<script>
+    var es = new EventSource('/events/');
+
+    es.addEventListener('message', function (e) {
+        console.log(e.data);
+    }, false);
+
+    es.addEventListener('stream-reset', function (e) {
+        // ... client fell behind, reinitialize ...
+        console.log(e)
+    }, false);
+</script>
+</html>

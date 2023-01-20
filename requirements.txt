@@ -1,0 +1,7 @@
+channels==3.0.5
+Django==4.0
+django-allauth==0.52.0
+django-eventstream==4.5.0
+djangorestframework==3.14.0
+dj-rest-auth==2.2.7
+psycopg2==2.9.5
