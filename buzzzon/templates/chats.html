@@ -131,7 +131,9 @@
 
     .inbox_chat {
         height: 540px;
-        overflow-y: scroll;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
     }
 
     .active_chat {
@@ -247,6 +249,45 @@
         display: block;
         float: left;
     }
+
+    /* Style the tab */
+    .tab {
+        overflow: hidden;
+        border: 1px solid #ccc;
+        background-color: #f1f1f1;
+    }
+
+    /* Style the buttons that are used to open the tab content */
+    .tab button {
+        background-color: inherit;
+        float: left;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 14px 16px;
+        transition: 0.3s;
+    }
+
+    /* Change background color of buttons on hover */
+    .tab button:hover {
+        background-color: #ddd;
+    }
+
+    /* Create an active/current tablink class */
+    .tab button.active {
+        background-color: #ccc;
+    }
+
+    /* Style the tab content */
+    .tabcontent {
+        display: none;
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        border-top: none;
+        height: 100%;
+        position: absolute;
+    }
+
 </style>
 <body>
 <img src="/static/images/logo.png" class="buzzzon-logo">
@@ -264,6 +305,9 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="/contacts">Contacts</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/groups">Groups</a>
             </li>
             <li class="nav-item active">
                 <a class="nav-link disabled">Chats</a>
@@ -286,11 +330,22 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                         <div class="stylish-input-group">
                             <input type="text" class="search-bar" placeholder="Search">
                             <span class="input-group-addon">
-                <button type="button"> <i class="fa fa-search" aria-hidden="true"></i> </button>
-                </span></div>
+                                <button type="button"> <i class="fa fa-search" aria-hidden="true"></i> </button>
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div class="inbox_chat">
+                    <div class="tab">
+                        <button class="tablinks" onclick="showContacts(event)" id="defaultChatsTab">Contacts</button>
+                        <button class="tablinks" onclick="showGroups(event)">Groups</button>
+                    </div>
+                    <div id="contacts" class="tabcontent">
+
+                    </div>
+                    <div id="groups" class="tabcontent">
+
+                    </div>
                 </div>
             </div>
             <div class="mesgs">
@@ -311,21 +366,13 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
 </body>
 
 <script>
-
     if (!$.cookie("userToken"))
         window.location.href = window.location.origin + "/userAuth/";
 
-    $(".write_msg").keyup(function (event) {
-        if (event.keyCode === 13) {
-            if (!$(".write_msg").val().length)
-                return;
-            $(".msg_send_btn").click();
-        }
-    });
-
-    var user_details;
-    var contacts_list;
-    const csrf_val = document.cookie.split("csrftoken=")[1];
+    var user_details = [];
+    var contacts_list = [];
+    var groups_list = [];
+    var csrf_val = document.cookie.split("csrftoken=")[1];
 
     var getUserDetails = function () {
         $.ajax({
@@ -341,9 +388,9 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
         });
     };
     getUserDetails();
+    document.getElementById('defaultChatsTab').click();
 
-
-    var getContactsList = function () {
+    function getContacts() {
         $.ajax({
             url: "/api/contacts",
             headers: {"X-CSRFToken": csrf_val, 'Authorization': 'Token ' + $.cookie("userToken")},
@@ -352,13 +399,12 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                 // generate table rows
                 contacts_list = data;
                 data.map((contact) =>
-                    document.getElementsByClassName('inbox_chat')[0].innerHTML += '<div class="chat_list">\n' +
+                    document.getElementById('contacts').innerHTML += '<div class="chat_list">\n' +
                         '                        <div class="chat_people" onclick="startConversation(this)">\n' +
-                        '                            <div class="chat_img"><img src="https://ptetutorials.com/images/user-profile.png"\n' +
+                        '                            <div class="chat_img"><img src="/static/images/contact.png"\n' +
                         '                                                       alt="sunil"></div>\n' +
                         '                            <div class="chat_ib">\n' +
                         `                                <h5> ${contact.contact_name} <span class="chat_date"></span></h5>\n` +
-                        '                                <p>This is message preview</p>\n' +
                         '                            </div>\n' +
                         '                        </div>\n' +
                         '                    </div>'
@@ -368,24 +414,44 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                 console.log('error')
             }
         });
+    }
+
+    function showContacts(event) {
+        // Declare all variables
+        let i, tabcontent, tablinks;
+        // Get all elements with class="tabcontent" and hide them
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+          tabcontent[i].style.display = "none";
+        }
+        // Get all elements with class="tablinks" and remove the class "active"
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        // Show the current tab, and add an "active" class to the button that opened the tab
+        document.getElementById('contacts').style.display = "block";
+        event.currentTarget.className += " active";
+        if (!contacts_list || contacts_list.length == 0)
+            getContacts();
+
     };
 
-    var getRoomsList = function () {
+    function getGroups() {
         $.ajax({
-            url: "/api/rooms",
+            url: "/api/groups",
             headers: {"X-CSRFToken": csrf_val, 'Authorization': 'Token ' + $.cookie("userToken")},
             type: "GET",
             success: function (data, textStatus, jqXHR) {
                 // generate table rows
-                contacts_list = data;
-                data.map((contact) =>
-                    document.getElementsByClassName('inbox_chat')[0].innerHTML += '<div class="chat_list">\n' +
+                groups_list = data;
+                data.map((group) =>
+                    document.getElementById('groups').innerHTML += '<div class="chat_list">\n' +
                         '                        <div class="chat_people" onclick="startConversation(this)">\n' +
-                        '                            <div class="chat_img"><img src="https://ptetutorials.com/images/user-profile.png"\n' +
+                        '                            <div class="chat_img"><img src="/static/images/group.png"\n' +
                         '                                                       alt="sunil"></div>\n' +
                         '                            <div class="chat_ib">\n' +
-                        `                                <h5> ${contact.contact_name} <span class="chat_date"></span></h5>\n` +
-                        '                                <p>This is message preview</p>\n' +
+                        `                                <h5> ${group.name} <span class="chat_date"></span></h5>\n` +
                         '                            </div>\n' +
                         '                        </div>\n' +
                         '                    </div>'
@@ -395,10 +461,27 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                 console.log('error')
             }
         });
+    }
+
+    function showGroups(event) {
+        // Declare all variables
+        let i, tabcontent, tablinks;
+        // Get all elements with class="tabcontent" and hide them
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+          tabcontent[i].style.display = "none";
+        }
+        // Get all elements with class="tablinks" and remove the class "active"
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        // Show the current tab, and add an "active" class to the button that opened the tab
+        document.getElementById('groups').style.display = "block";
+        event.currentTarget.className += " active";
+        if (!groups_list || groups_list.length == 0)
+            getGroups();
     };
-
-    getContactsList();
-
 
     var sendMessage = function () {
         var message = $('.write_msg').val();
@@ -444,7 +527,7 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
 
     var getConversationHistory = function (user_id) {
         $.ajax({
-            url: "/api/message/?user=" + user_id,
+            url: "/api/messages/?user=" + user_id,
             headers: {"X-CSRFToken": csrf_val, 'Authorization': 'Token ' + $.cookie("userToken")},
             type: "GET",
             success: function (data, textStatus, jqXHR) {

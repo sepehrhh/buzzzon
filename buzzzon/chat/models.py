@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from django.utils.translation import gettext_lazy as _
@@ -133,10 +135,15 @@ class Contact(models.Model):
         return self.contact_name
 
 
+class Group(models.Model):
+    owner = models.ForeignKey(User, related_name='managed_groups', on_delete=models.CASCADE)
+    participants = models.ManyToManyField(User, blank=True)
+    name = models.CharField(max_length=50)
+    share_code = models.UUIDField(default=uuid.uuid4, null=True, unique=True)
+
+
 class Message(models.Model):
     sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
     receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE)
     message = models.CharField(max_length=500)
     created = models.DateTimeField(auto_now_add=True)
-
-

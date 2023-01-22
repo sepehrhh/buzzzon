@@ -77,8 +77,14 @@ class RoomSerializer(serializers.ModelSerializer):
         model = models.Room
         validators = []  # remove default validation
 
+class ContactRelatedField(serializers.RelatedField):
+    def to_representation(self, value):
+        return UserSerializer(value).data
+
 
 class ContactSerializer(serializers.ModelSerializer):
+    contact = ContactRelatedField(queryset=models.Contact.objects.all())
+
     class Meta:
         fields = (
             'id',
@@ -89,6 +95,41 @@ class ContactSerializer(serializers.ModelSerializer):
             'created',
         )
         model = models.Contact
+
+    def to_internal_value(self, data):
+        data._mutable = True
+        if self.instance is None:
+            data['owner'] = self.context.get('request').user.id
+        else:
+            data['owner'] = None
+        return super(ContactSerializer, self).to_internal_value(data)
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    participants = UserSerializer(many=True, read_only=True)
+
+    class Meta:
+        fields = (
+            'id',
+            'owner',
+            'participants',
+            'share_code',
+            'name',
+        )
+        model = models.Group
+
+    def to_internal_value(self, data):
+        data._mutable = True
+        if self.instance is None:
+            data['owner'] = self.context.get('request').user.id
+        else:
+            data['owner'] = None
+        return super(GroupSerializer, self).to_internal_value(data)
+
+    def to_representation(self, instance):
+        representation = super(GroupSerializer, self).to_representation(instance)
+        representation['owner'] = UserSerializer(instance.owner).data
+        return representation
 
 
 class MessageSerializer(serializers.ModelSerializer):

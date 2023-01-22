@@ -66,23 +66,29 @@ class ListCreateContact(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return models.Contact.objects.filter(owner=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-        user = get_object_or_404(models.User, email=request.data.get('contact'))
-        contact = models.Contact.objects.create(
-            contact=user,
-            owner=request.user,
-            contact_name=request.data.get('contact_name'),
-            detail=request.data.get('detail'),
-        )
-        serializer = self.serializer_class(contact)
-        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        return models.Contact.objects.filter(owner=self.request.user).select_related('contact', 'owner')
 
 
 class RetrieveUpdateDestroyContact(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.ContactSerializer
     queryset = models.Contact.objects.all()
+    permission_classes = (IsAuthenticated,)
+
+    def get_object(self):
+        return get_object_or_404(self.queryset, id=self.kwargs.get('pk'), owner=self.request.user)
+
+
+class ListCreateGroup(generics.ListCreateAPIView):
+    serializer_class = serializers.GroupSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return models.Group.objects.filter(Q(owner=self.request.user) | Q(participants__id__contains=self.request.user))
+
+
+class RetrieveUpdateDestroyGroup(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = serializers.GroupSerializer
+    queryset = models.Group.objects.all()
     permission_classes = (IsAuthenticated,)
 
     def get_object(self):
