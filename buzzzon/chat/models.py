@@ -142,6 +142,12 @@ class Group(models.Model):
     share_code = models.UUIDField(default=uuid.uuid4, null=True, unique=True)
 
 
+class MessageType:
+    CHAT = 1
+    GROUP_CONTROL = 2
+    FILE = 3
+
+
 class Message(models.Model):
     MESSAGE_TYPES = (
         (1, 'chat'),
@@ -150,6 +156,6 @@ class Message(models.Model):
     )
     sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
     receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE)
-    content = models.CharField(max_length=500)
+    content = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
     type = models.IntegerField(choices=MESSAGE_TYPES, default=1)

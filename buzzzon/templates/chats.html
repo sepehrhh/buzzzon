@@ -6,7 +6,7 @@
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
-    <script src="/static/js/lz-string.min.js"></script>
+    <script src="/static/js/compressor.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" type="text/css"
           rel="stylesheet">
     <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">-->
@@ -404,7 +404,7 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                     </div>
                 </div>
             </div>
-            <div class="mesgs">
+            <div class="mesgs" id="messages-container">
                 <div class="msg_history">
                 </div>
                 <div class="type_msg">
@@ -553,22 +553,40 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
             success: function (data, textStatus, jqXHR) {
                 // generate table rows
                 $(".msg_history")[0].innerHTML = '';
-
+                var content;
                 for (var k = 0; k < data.length; k++) {
+                    if (data[k].type == 3) {
+                        if (data[k].content.startsWith('data:image/')) {
+                            content = '<div>\n' +
+                                      '     <img src="' + data[k].content + '">\n' +
+                                      '      <span class="time_date">' + '</span>\n' +
+                                      '</div>';
+                        } else {
+                            content = '<div>\n' +
+                                      '     <embed src="' + data[k].content + '">\n' +
+                                      '      <span class="time_date">' + '</span>\n' +
+                                      '</div>';
+                        }
+                    } else {
+                        content = '<p>\n' + data[k].content + '\n' +
+                                  '<span class="time_date">' + '</span>\n'
+                                  '</p>\n';
+                    }
                     if (data[k].sender != user_details.pk) {
                         $(".msg_history")[0].innerHTML += '<div class="incoming_msg">\n' +
-                            '                        <div class="incoming_msg_img"><img src="https://ptetutorials.com/images/user-profile.png"\n' +
-                            '                                                           alt="sunil"></div>\n' +
-                            '                        <div class="received_msg">\n' +
-                            '                            <div class="received_withd_msg">\n' +
-                            '                                <p>' + data[k].content + '<span class="time_date" style="color: black"></span></div></p>\n' +
+                            '                        <div class="incoming_msg_img">' +
+                            '                           <img src="https://ptetutorials.com/images/user-profile.png" alt="sunil">\n' +
                             '                        </div>\n' +
-                            '                    </div>'
+                            '                        <div class="received_msg">\n' +
+                            '                            <div class="received_withd_msg">\n' + content +
+                            '                            </div>\n' +
+                            '                        <p></p>\n' +
+                            '                    </div>\n' +
+                            '                </div>'
                     } else {
                         $(".msg_history")[0].innerHTML += '<div class="outgoing_msg">\n' +
-                            '                        <div class="sent_msg">\n' +
-                            '                            <p>' + data[k].content + '<span class="time_date"></span></p>\n' +
-                            '                            </div>\n' +
+                            '                        <div class="sent_msg">\n' + content +
+                            '                        </div>\n' +
                             '                    </div>';
                     }
                 }
@@ -590,15 +608,36 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
             var json_data = JSON.parse(event.data);
             var today = new Date();
             var time = today.getHours() + ":" + today.getMinutes();
-            if (user_details.email !== json_data.message.sender)
+            if (user_details.email !== json_data.message.sender) {
+                if (json_data.message.type == 3) {
+                    if (json_data.message.text.startsWith('data:image/')) {
+                        var content = '<div>\n' +
+                                  '     <img src="' + json_data.message.text + '">\n' +
+                                  '      <span class="time_date">' + '</span>\n' +
+                                  '</div>';
+                    } else {
+                        var content = '<div>\n' +
+                                  '     <embed src="' + json_data.message.text + '">\n' +
+                                  '      <span class="time_date">' + '</span>\n' +
+                                  '</div>';
+                    }
+                } else {
+                    var content = '<p>\n' + json_data.message.text + '\n' +
+                              '<span class="time_date" style="color: black">' + '</span>\n'
+                              '</p>\n';
+                }
+
                 $(".msg_history")[0].innerHTML += '<div class="incoming_msg">\n' +
-                    '                        <div class="incoming_msg_img"><img src="https://ptetutorials.com/images/user-profile.png"\n' +
-                    '                                                           alt="sunil"></div>\n' +
-                    '                        <div class="received_msg">\n' +
-                    '                            <div class="received_withd_msg">\n' +
-                    '                                <p>' + json_data.message.text + '<span class="time_date" style="color: black"></span></div></p>\n' +
-                    '                        </div>\n' +
-                    '                    </div>'
+                            '                        <div class="incoming_msg_img">' +
+                            '                           <img src="https://ptetutorials.com/images/user-profile.png" alt="sunil">\n' +
+                            '                        </div>\n' +
+                            '                        <div class="received_msg">\n' +
+                            '                            <div class="received_withd_msg">\n' + content +
+                            '                            </div>\n' +
+                            '                        <p></p>\n' +
+                            '                    </div>\n' +
+                            '                </div>'
+            }
         };
         ws.onopen = function () {};
     };
@@ -618,46 +657,53 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
 
     var fileUpload = function (event) {
         var file = event.target.files[0];
-        console.log(file);
-        sendFile(file);
-    }
-
-    function getBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-                resolve(reader.result.toString());
-            };
-            reader.onerror = error => reject(error);
-        });
+        if (file.type.startsWith("image/")) {
+            new Compressor(file, {
+                quality: 0.6,
+                // The compression process is asynchronous,
+                // which means you have to access the `result` in the `success` hook function.
+                success(result) {
+                    file = result
+                    sendFile(file);
+                },
+                error(err) {
+                    console.log(err.message);
+                },
+            });
+        }
+        else {
+            sendFile(file);
+        }
     }
 
     async function sendFile(file) {
         var today = new Date();
         var time = today.getHours() + ":" + today.getMinutes();
-        var fileType = file.type;
-        const validImageTypes = ['image/gif', 'image/jpeg', 'image/png', 'image/jpg'];
-        if (!validImageTypes.includes(fileType)) {
+        if (!file.type.startsWith("image/")) {
             $(".msg_history")[0].innerHTML += '<div class="outgoing_msg">\n' +
             '                        <div class="sent_msg">\n' +
             '                            <div>\n' +
-            '                               <embed src="' + URL.createObjectURL(event.target.files[0]) + '">\n' +
+            '                               <embed src="' + URL.createObjectURL(file) + '">\n' +
             '                               <span class="time_date">' + time + '</span>\n' +
             '                            </div>\n' +
-            '                        </div>';
+            '                        </div>\n' +
+            '                   </div>';
         } else {
             $(".msg_history")[0].innerHTML += '<div class="outgoing_msg">\n' +
             '                        <div class="sent_msg">\n' +
             '                            <div>\n' +
-            '                               <img src="' + URL.createObjectURL(event.target.files[0]) + '">\n' +
+            '                               <img src="' + URL.createObjectURL(file) + '">\n' +
             '                               <span class="time_date">' + time + '</span>\n' +
             '                            </div>\n' +
-            '                        </div>';
+            '                        </div>\n' +
+            '                   </div>';
         }
-        var base64File = await getBase64(file);
-        var compressed_file = LZString.compress(base64File);
-        ws.send(JSON.stringify({"type": 3, "content": compressed_file}));
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            ws.send(JSON.stringify({"type": 3, "content": reader.result.toString()}));
+        };
+        reader.onerror = error => reject(error);
     };
 
     var logout = function () {

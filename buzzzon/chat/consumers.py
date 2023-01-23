@@ -33,7 +33,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             pass
 
     async def receive_json(self, content, **kwargs):
-        print(content)
         message = await utils.create_chat_message(
             sender=self.scope['user'],
             receiver_id=self.contact_id,

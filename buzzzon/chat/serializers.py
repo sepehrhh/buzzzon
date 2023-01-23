@@ -1,8 +1,4 @@
-from rest_framework import serializers
-from . import models
-
 from django.contrib.auth import settings
-
 from allauth.account.models import EmailAddress
 from allauth.account.forms import ResetPasswordForm
 from dj_rest_auth.serializers import (
@@ -13,6 +9,8 @@ from dj_rest_auth.serializers import (
 )
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+
+from . import models
 
 User = get_user_model()
 
