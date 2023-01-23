@@ -138,7 +138,8 @@ class MessageSerializer(serializers.ModelSerializer):
             'id',
             'sender',
             'receiver',
-            'message',
+            'content',
             'created',
+            'type',
         )
         model = models.Message

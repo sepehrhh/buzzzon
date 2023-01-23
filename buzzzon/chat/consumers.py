@@ -1,76 +1,66 @@
-from asgiref.sync import async_to_sync
-from channels.generic.websocket import WebsocketConsumer
-import json
-from . import models
-from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import AnonymousUser
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+
+from . import utils
 
 
-class ChatConsumer(WebsocketConsumer):
-    def connect(self):
-        print('in fuuuuuuuuuuuuuuuuuunc connect')
-
-        # get receiver username
-        self.user_id = self.scope['url_route']['kwargs']['user_id']
-
-        # get sender username
-        user_token = self.scope['cookies']['userToken']
-        token = Token.objects.get(key=user_token)
-        self.sender = token.user_id
-        self.room_group_name = 'chat_{}_with_{}'.format(min(self.sender, self.user_id), max(self.sender, self.user_id))
-
-        # Join room group
-        async_to_sync(self.channel_layer.group_add)(
-            self.room_group_name,
-            self.channel_name
+class ChatConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        if self.scope['user'] is AnonymousUser:
+            return await self.close()
+        else:
+            await self.accept()
+        self.contact_id = self.scope['url_route']['kwargs']['contact_id']
+        chat_users_min_id = min(self.scope['user'].id, self.contact_id)
+        chat_users_max_id = max(self.scope['user'].id, self.contact_id)
+        self.chat_name = f'user_{chat_users_min_id}_to_{chat_users_max_id}_chat'
+        await self.channel_layer.group_add(
+            self.chat_name,
+            self.channel_name,
         )
 
-        self.accept()
+    async def disconnect(self, code):
+        try:
+            if self.scope['user'] is AnonymousUser:
+                return
 
-    def disconnect(self, close_code):
-        print('in fuuuuuuuuuuuuuuuuuunc disconnect')
+            # Leave room group
+            await self.channel_layer.group_discard(
+                self.chat_name,
+                self.channel_name
+            )
+        except:
+            pass
 
-        # Leave room group
-        async_to_sync(self.channel_layer.group_discard)(
-            self.room_group_name,
-            self.channel_name
+    async def receive_json(self, content, **kwargs):
+        print(content)
+        message = await utils.create_chat_message(
+            sender=self.scope['user'],
+            receiver_id=self.contact_id,
+            message=content
         )
 
-    # Receive message from WebSocket
-    def receive(self, text_data):
-        print('in fuuuuuuuuuuuuuuuuuunc receive', text_data)
-
-        # convert received data to dict and get the data
-        json_data = json.loads(text_data)
-        message = json_data.get('message')
-
-        # save received message to db
-        message_obj = models.Message.objects.create(
-            sender=models.User.objects.get(id=self.sender),
-            receiver=models.User.objects.get(id=self.user_id),
-            message=message
-        )
-
-        message_to_return = {
-            'message': message,
-            'sender': self.sender,
-            'time_sent': message_obj.created.strftime('%m/%d/%Y %H:%M:%S')
-        }
-        # Send message to room group
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
+        await self.channel_layer.group_send(
+            self.chat_name,
             {
                 'type': 'chat_message',
-                'message': message_to_return
+                'message': {
+                    'text': message.content,
+                    'sender': self.scope['user'].email,
+                    'time_sent': message.created.strftime('%m/%d/%Y %H:%M:%S'),
+                    'type': message.type,
+                }
             }
         )
 
-    # Receive message from room group
-    def chat_message(self, event):
-        print('in fuuuuuuuuuuuuuuuuuunc chat_message')
-
+    async def chat_message(self, event):
+        """
+        chat_message message type handler
+        :param event:
+        :return:
+        """
         message = event['message']
-
         # Send message to WebSocket
-        self.send(text_data=json.dumps({
+        await self.send_json({
             'message': message
-        }))
+        })

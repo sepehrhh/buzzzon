@@ -143,7 +143,13 @@ class Group(models.Model):
 
 
 class Message(models.Model):
+    MESSAGE_TYPES = (
+        (1, 'chat'),
+        (2, 'group_control'),
+        (3, 'closed'),
+    )
     sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
     receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE)
-    message = models.CharField(max_length=500)
+    content = models.CharField(max_length=500)
     created = models.DateTimeField(auto_now_add=True)
+    type = models.IntegerField(choices=MESSAGE_TYPES, default=1)

@@ -25,6 +25,7 @@
         padding-left: 10px;
         padding-right: 40px;
         border-radius: 5px;
+        width: 83%;
     }
 
     .inbox_people {
@@ -123,6 +124,10 @@
         clear: both;
     }
 
+    .chat_people:active {
+        color: lightgray;
+    }
+
     .chat_list {
         border-bottom: 1px solid #c4c4c4;
         margin: 0;
@@ -208,7 +213,6 @@
         color: #4c4c4c;
         font-size: 15px;
         min-height: 48px;
-        width: 100%;
     }
 
     .type_msg {
@@ -222,12 +226,37 @@
         border-radius: 50%;
         color: #fff;
         cursor: pointer;
-        font-size: 17px;
+        font-size: 16px;
         height: 33px;
         position: absolute;
         right: 4px;
         top: 7px;
         width: 33px;
+    }
+
+    .file-input-container {
+        position: absolute;
+        display: inline-block;
+        width: 33px;
+        height: 33px;
+        padding-top: 8px;
+        margin-top: 7px;
+        background: #05728f none repeat scroll 0 0;
+        border: medium none;
+        border-radius: 50%;
+        color: #fff;
+        cursor: pointer;
+        font-size: 16px;
+        text-align: center;
+        right: 42px;
+    }
+
+    i {
+        cursor: pointer;
+    }
+
+    .file-input::-webkit-file-upload-button {
+        visibility: hidden;
     }
 
     .messaging {
@@ -240,6 +269,11 @@
     }
 
     .chat_list:hover {
+        cursor: pointer;
+        background-color: lightgray;
+    }
+
+    .chat_list.active {
         cursor: pointer;
         background-color: lightgray;
     }
@@ -354,6 +388,12 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                 <div class="type_msg">
                     <div class="input_msg_write">
                         <input type="text" class="write_msg" id="write_msg" placeholder="Type a message"/>
+                        <div class="file-input-container">
+                          <label for="file-input">
+                            <i class="fa fa-upload"></i>
+                          </label>
+                          <input class="file-input" id="file-input" type="file" hidden/>
+                        </div>
                         <button class="msg_send_btn" type="submit" onclick="sendMessage()"><i
                                 class="fa fa-paper-plane-o"
                                 aria-hidden="true"></i></button>
@@ -373,6 +413,7 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
     var contacts_list = [];
     var groups_list = [];
     var csrf_val = document.cookie.split("csrftoken=")[1];
+    var ws = null;
 
     var getUserDetails = function () {
         $.ajax({
@@ -446,15 +487,14 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                 // generate table rows
                 groups_list = data;
                 data.map((group) =>
-                    document.getElementById('groups').innerHTML += '<div class="chat_list">\n' +
-                        '                        <div class="chat_people" onclick="startConversation(this)">\n' +
-                        '                            <div class="chat_img"><img src="/static/images/group.png"\n' +
-                        '                                                       alt="sunil"></div>\n' +
+                    document.getElementById('groups').innerHTML += '<ul class="chat_list">\n' +
+                        '                        <li class="chat_people" onclick="startConversation(event, this)">\n' +
+                        '                            <div class="chat_img"><img src="/static/images/group.png""></div>\n' +
                         '                            <div class="chat_ib">\n' +
                         `                                <h5> ${group.name} <span class="chat_date"></span></h5>\n` +
                         '                            </div>\n' +
-                        '                        </div>\n' +
-                        '                    </div>'
+                        '                        </li>\n' +
+                        '                    </ul>'
                 )
             },
             error: function (jqXHR, textStatus, errorThrown) {
@@ -483,49 +523,7 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
             getGroups();
     };
 
-    var sendMessage = function () {
-        var message = $('.write_msg').val();
-        var today = new Date();
-        var time = today.getHours() + ":" + today.getMinutes();
-        $(".msg_history")[0].innerHTML += '<div class="outgoing_msg">\n' +
-            '                        <div class="sent_msg">\n' +
-            '                            <p>' + message + '<span class="time_date"></span></p>\n' +
-            '                            </div>\n' +
-            '                    </div>';
-        $(".write_msg").val('');
-        ws.send('{"message": "' + message + '", "sender": 14}')
-    };
-
-
-    var startConversation = function (data) {
-        $(".msg_history")[0].innerHTML = '';
-        var index = $('.chat_people').index(data);
-        var contact_id = contacts_list[index].contact;
-        getConversationHistory(contact_id);
-        ws = new WebSocket("ws://127.0.0.1:8002/ws/chat/" + contact_id + "/");
-        // Make it show an alert when a message is received
-        ws.onmessage = function (message) {
-            var message_json = JSON.parse(message.data).message;
-            var message_data = message_json.message;
-            var today = new Date();
-            var time = today.getHours() + ":" + today.getMinutes();
-            if (user_details.pk != message_json.sender)
-                $(".msg_history")[0].innerHTML += '<div class="incoming_msg">\n' +
-                    '                        <div class="incoming_msg_img"><img src="https://ptetutorials.com/images/user-profile.png"\n' +
-                    '                                                           alt="sunil"></div>\n' +
-                    '                        <div class="received_msg">\n' +
-                    '                            <div class="received_withd_msg">\n' +
-                    '                                <p>' + message_data + '<span class="time_date" style="color: black"></span></div></p>\n' +
-                    '                        </div>\n' +
-                    '                    </div>'
-        };
-        // Send a new message when the WebSocket opens
-        ws.onopen = function () {
-        };
-    };
-
-
-    var getConversationHistory = function (user_id) {
+    var getConversation = function (user_id) {
         $.ajax({
             url: "/api/messages/?user=" + user_id,
             headers: {"X-CSRFToken": csrf_val, 'Authorization': 'Token ' + $.cookie("userToken")},
@@ -542,25 +540,61 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                             '                                                           alt="sunil"></div>\n' +
                             '                        <div class="received_msg">\n' +
                             '                            <div class="received_withd_msg">\n' +
-                            '                                <p>' + data[k].message + '<span class="time_date" style="color: black"></span></div></p>\n' +
+                            '                                <p>' + data[k].content + '<span class="time_date" style="color: black"></span></div></p>\n' +
                             '                        </div>\n' +
                             '                    </div>'
                     } else {
                         $(".msg_history")[0].innerHTML += '<div class="outgoing_msg">\n' +
                             '                        <div class="sent_msg">\n' +
-                            '                            <p>' + data[k].message + '<span class="time_date"></span></p>\n' +
+                            '                            <p>' + data[k].content + '<span class="time_date"></span></p>\n' +
                             '                            </div>\n' +
                             '                    </div>';
                     }
                 }
-
-
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 console.log('error')
             }
         });
     };
+
+
+    function startConversation(event, data) {
+        $(".msg_history")[0].innerHTML = '';
+        var index = $('.chat_people').index(data);
+        var contact_id = contacts_list[index].contact.id;
+        getConversation(contact_id);
+        ws = new WebSocket("ws://127.0.0.1:8005/ws/chat/" + contact_id + "/" + "?token=" + $.cookie("userToken"));
+        ws.onmessage = function (event) {
+            var json_data = JSON.parse(event.data);
+            var today = new Date();
+            var time = today.getHours() + ":" + today.getMinutes();
+            if (user_details.email !== json_data.message.sender)
+                $(".msg_history")[0].innerHTML += '<div class="incoming_msg">\n' +
+                    '                        <div class="incoming_msg_img"><img src="https://ptetutorials.com/images/user-profile.png"\n' +
+                    '                                                           alt="sunil"></div>\n' +
+                    '                        <div class="received_msg">\n' +
+                    '                            <div class="received_withd_msg">\n' +
+                    '                                <p>' + json_data.message.text + '<span class="time_date" style="color: black"></span></div></p>\n' +
+                    '                        </div>\n' +
+                    '                    </div>'
+        };
+        ws.onopen = function () {};
+    };
+
+    var sendMessage = function () {
+        var message = $('.write_msg').val();
+        var today = new Date();
+        var time = today.getHours() + ":" + today.getMinutes();
+        $(".msg_history")[0].innerHTML += '<div class="outgoing_msg">\n' +
+            '                        <div class="sent_msg">\n' +
+            '                            <p>' + message + '<span class="time_date"></span></p>\n' +
+            '                            </div>\n' +
+            '                    </div>';
+        $(".write_msg").val('');
+        ws.send(JSON.stringify({"type": 1, "content": message}));
+    };
+
     var logout = function () {
         $.removeCookie('userToken', {path: '/'});
         window.location.href = '/userAuth'

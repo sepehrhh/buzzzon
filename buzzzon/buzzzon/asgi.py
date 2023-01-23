@@ -7,7 +7,7 @@ from channels.security.websocket import AllowedHostsOriginValidator
 from channels.auth import AuthMiddlewareStack
 import django_eventstream
 
-from chat import consumers
+from chat import consumers, auth
 
 
 # Fetch Django ASGI application early to ensure AppRegistry is populated
@@ -21,11 +21,9 @@ application = ProtocolTypeRouter({
         re_path(r'', get_asgi_application()),
     ]),
     # WebSocket chat handler
-    "websocket": AllowedHostsOriginValidator(
-        AuthMiddlewareStack(
-            URLRouter([
-                path('ws/chat/<int:user_id>/', consumers.ChatConsumer.as_asgi()),
-            ])
-        )
+    "websocket": auth.TokenAuthMiddleware(
+        URLRouter([
+            path('ws/chat/<int:contact_id>/', consumers.ChatConsumer.as_asgi()),
+        ])
     ),
 })
