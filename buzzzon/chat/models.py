@@ -155,7 +155,8 @@ class Message(models.Model):
         (3, 'file'),
     )
     sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
-    receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE)
+    receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE, null=True)
     content = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
     type = models.IntegerField(choices=MESSAGE_TYPES, default=1)
+    group = models.ForeignKey(Group, related_name='messages', on_delete=models.CASCADE, null=True, blank=True)

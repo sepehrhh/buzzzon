@@ -129,6 +129,15 @@
         color: lightgray;
     }
 
+    .chat_groups {
+        overflow: hidden;
+        clear: both;
+    }
+
+    .chat_groups:active {
+        color: lightgray;
+    }
+
     .chat_list {
         border-bottom: 1px solid #c4c4c4;
         margin: 0;
@@ -450,7 +459,7 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                 contacts_list = data;
                 data.map((contact) =>
                     document.getElementById('contacts').innerHTML += '<div class="chat_list">\n' +
-                        '                        <div class="chat_people" onclick="startConversation(this)">\n' +
+                        '                        <div class="chat_people" onclick="startGroupConversation(this)">\n' +
                         '                            <div class="chat_img"><img src="/static/images/contact.png"\n' +
                         '                                                       alt="sunil"></div>\n' +
                         '                            <div class="chat_ib">\n' +
@@ -497,7 +506,7 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                 groups_list = data;
                 data.map((group) =>
                     document.getElementById('groups').innerHTML += '<ul class="chat_list">\n' +
-                        '                        <li class="chat_people" onclick="startConversation(event, this)">\n' +
+                        '                        <li class="chat_groups" onclick="startGroupConversation(event, this)">\n' +
                         '                            <div class="chat_img"><img src="/static/images/group.png""></div>\n' +
                         '                            <div class="chat_ib">\n' +
                         `                                <h5> ${group.name} <span class="chat_date"></span></h5>\n` +
@@ -584,6 +593,58 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
         });
     };
 
+    var getGroupConversation = function (share_code) {
+        $.ajax({
+            url: "/api/messages/?group=" + share_code,
+            headers: {"X-CSRFToken": csrf_val, 'Authorization': 'Token ' + $.cookie("userToken")},
+            type: "GET",
+            success: function (data, textStatus, jqXHR) {
+                // generate table rows
+                $(".msg_history")[0].innerHTML = '';
+                var content;
+                for (var k = 0; k < data.length; k++) {
+                    if (data[k].type == 3) {
+                        if (data[k].content.startsWith('data:image/')) {
+                            content = '<div>\n' +
+                                      '     <img src="' + data[k].content + '">\n' +
+                                      '      <span class="time_date">' + '</span>\n' +
+                                      '</div>';
+                        } else {
+                            content = '<div>\n' +
+                                      '     <embed src="' + data[k].content + '">\n' +
+                                      '      <span class="time_date">' + '</span>\n' +
+                                      '</div>';
+                        }
+                    } else {
+                        content = '<p>\n' + data[k].content + '\n' +
+                                  '<span class="time_date">' + '</span>\n'
+                                  '</p>\n';
+                    }
+                    if (data[k].sender != user_details.pk) {
+                        $(".msg_history")[0].innerHTML += '<div class="incoming_msg">\n' +
+                            '                        <div class="incoming_msg_img">' +
+                            '                           <img src="https://ptetutorials.com/images/user-profile.png" alt="sunil">\n' +
+                            '                        </div>\n' +
+                            '                        <div class="received_msg">\n' +
+                            '                            <div class="received_withd_msg">\n' + content +
+                            '                            </div>\n' +
+                            '                        <p></p>\n' +
+                            '                    </div>\n' +
+                            '                </div>'
+                    } else {
+                        $(".msg_history")[0].innerHTML += '<div class="outgoing_msg">\n' +
+                            '                        <div class="sent_msg">\n' + content +
+                            '                        </div>\n' +
+                            '                    </div>';
+                    }
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.log('error')
+            }
+        });
+    };
+
 
     function startConversation(event, data) {
         $(".msg_history")[0].innerHTML = '';
@@ -591,6 +652,50 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
         var contact_id = contacts_list[index].contact.id;
         getConversation(contact_id);
         ws = new WebSocket("ws://127.0.0.1:8005/ws/chat/" + contact_id + "/" + "?token=" + $.cookie("userToken"));
+        ws.onmessage = function (event) {
+            var json_data = JSON.parse(event.data);
+            var today = new Date();
+            var time = today.getHours() + ":" + today.getMinutes();
+            if (user_details.email !== json_data.message.sender) {
+                if (json_data.message.type == 3) {
+                    if (json_data.message.text.startsWith('data:image/')) {
+                        var content = '<div>\n' +
+                                  '     <img src="' + json_data.message.text + '">\n' +
+                                  '      <span class="time_date">' + '</span>\n' +
+                                  '</div>';
+                    } else {
+                        var content = '<div>\n' +
+                                  '     <embed src="' + json_data.message.text + '">\n' +
+                                  '      <span class="time_date">' + '</span>\n' +
+                                  '</div>';
+                    }
+                } else {
+                    var content = '<p>\n' + json_data.message.text + '\n' +
+                              '<span class="time_date" style="color: black">' + '</span>\n'
+                              '</p>\n';
+                }
+
+                $(".msg_history")[0].innerHTML += '<div class="incoming_msg">\n' +
+                            '                        <div class="incoming_msg_img">' +
+                            '                           <img src="https://ptetutorials.com/images/user-profile.png" alt="sunil">\n' +
+                            '                        </div>\n' +
+                            '                        <div class="received_msg">\n' +
+                            '                            <div class="received_withd_msg">\n' + content +
+                            '                            </div>\n' +
+                            '                        <p></p>\n' +
+                            '                    </div>\n' +
+                            '                </div>'
+            }
+        };
+        ws.onopen = function () {};
+    };
+
+    function startGroupConversation(event, data) {
+        $(".msg_history")[0].innerHTML = '';
+        var index = $('.chat_groups').index(data);
+        var group_id = groups_list[index].id;
+        getGroupConversation(group_id);
+        ws = new WebSocket("ws://127.0.0.1:8005/ws/chat/group/" + groups_list[index].share_code + "/" + "?token=" + $.cookie("userToken"));
         ws.onmessage = function (event) {
             var json_data = JSON.parse(event.data);
             var today = new Date();

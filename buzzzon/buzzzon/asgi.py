@@ -3,7 +3,6 @@ import os
 from django.core.asgi import get_asgi_application
 from django.urls import path, re_path
 from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.security.websocket import AllowedHostsOriginValidator
 from channels.auth import AuthMiddlewareStack
 import django_eventstream
 
@@ -24,6 +23,7 @@ application = ProtocolTypeRouter({
     "websocket": auth.TokenAuthMiddleware(
         URLRouter([
             path('ws/chat/<int:contact_id>/', consumers.ChatConsumer.as_asgi()),
+            path('ws/chat/group/<str:share_code>/', consumers.GroupChatConsumer.as_asgi()),
         ])
     ),
 })

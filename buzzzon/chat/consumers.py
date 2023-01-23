@@ -63,3 +63,40 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({
             'message': message
         })
+
+
+class GroupChatConsumer(ChatConsumer):
+    async def connect(self):
+        if self.scope['user'] is AnonymousUser:
+            return await self.close()
+        else:
+            await self.accept()
+        group_share_code = self.scope['url_route']['kwargs']['share_code']
+        self.group = await utils.get_group(group_share_code, self.scope['user'])
+        if self.group is None:
+            return await self.close()
+        self.chat_name = f'group_{group_share_code}_chat'
+        await self.channel_layer.group_add(
+            self.chat_name,
+            self.channel_name,
+        )
+
+    async def receive_json(self, content, **kwargs):
+        message = await utils.create_group_chat_message(
+            sender=self.scope['user'],
+            group=self.group,
+            message=content
+        )
+
+        await self.channel_layer.group_send(
+            self.chat_name,
+            {
+                'type': 'chat_message',
+                'message': {
+                    'text': message.content,
+                    'sender': self.scope['user'].email,
+                    'time_sent': message.created.strftime('%m/%d/%Y %H:%M:%S'),
+                    'type': message.type,
+                }
+            }
+        )

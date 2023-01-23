@@ -77,48 +77,60 @@ font-size:16px;font-weight:400;line-height:20px;color:#212529;text-align:left;di
 
 <div class="container">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <div class="row" >
-        <div class="col-md-10 col-md-offset-1">
-            <div class="panel panel-success">
+    <div class="row" style="margin-top: 100px">
+        <div class="col-md-5 col-md-offset-1">
+            <div class="panel panel-primary">
                 <!-- Default panel contents -->
                 <div class="panel-heading">Create Group</div>
                 <div class="panel-body">
-                    <div class="row">
-                        <div class="col-md-8 col-md-offset-2">
-                            <form class="form-horizontal">
-                                <div class="form-group">
-                                    <label class="control-label col-sm-2" for="name">Name:</label>
-                                    <div class="col-sm-10">
-                                        <input type="text" class="form-control" id="name"
-                                               placeholder="Enter Name" name="name">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <div class="col-sm-offset-2 col-sm-10">
-                                        <button type="submit" id="addGroup" class="btn btn-default">Submit</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+                    <div class="input-group">
+                            <span class="input-group-btn">
+                            <button class="btn btn-default"
+                                    id="add-group-button"
+                                    onclick="addGroup()"
+                                    type="button">Create Group</button>
+                            </span>
+                        <input type="text" id="group-name-input" class="form-control" placeholder="Group Name">
+                    </div><!-- /input-group -->
                 </div>
 
             </div>
 
         </div>
+        <div class="col-md-5">
 
+            <div class="panel panel-primary">
+                <!-- Default panel contents -->
+                <div class="panel-heading">Join Group</div>
+                <div class="panel-body">
+                    <div class="input-group">
+                            <span class="input-group-btn">
+                            <button class="btn btn-default"
+                                    id="join-room-button"
+                                    onclick="joinGroup()"
+                                    type="button">Join Group!</button>
+                            </span>
+                        <input type="text"
+                               id="group-share-code-input"
+                               class="form-control" placeholder="Group Share Code">
+                    </div><!-- /input-group -->
+                </div>
+
+            </div>
+
+        </div>
     </div>
     <div class="row">
         <div class="col-md-offset-1 col-md-10">
-            <div class="panel panel-success">
+            <div class="panel panel-primary">
                 <!-- Default panel contents -->
-                <div class="panel-heading">Groups</div>
+                <div class="panel-heading">User Groups</div>
                 <table class="table table-hover table-bordered">
                     <thead>
                     <tr>
-                        <th>name</th>
-                        <th>share code</th>
-                        <th>owner</th>
+                        <th>Group Name</th>
+                        <th>Group Share Code</th>
+                        <th>Group Owner</th>
                     </tr>
                     </thead>
                     <tbody></tbody>
@@ -127,7 +139,6 @@ font-size:16px;font-weight:400;line-height:20px;color:#212529;text-align:left;di
 
         </div>
     </div>
-
 </div>
 
 
@@ -159,10 +170,7 @@ font-size:16px;font-weight:400;line-height:20px;color:#212529;text-align:left;di
 
     const addGroup = () => {
         // get form data
-        const name = document.getElementById("name");
-        console.log(name);
-        let button = $('#addGroup');
-
+        const name = document.getElementById("group-name-input");
         // create the group
         $.ajax({
             url: "/api/groups",
@@ -180,7 +188,25 @@ font-size:16px;font-weight:400;line-height:20px;color:#212529;text-align:left;di
         });
     };
 
-    $('#addGroup').click((e) => {
+    const joinGroup = () => {
+        // get form data
+        const shareCode = document.getElementById("group-share-code-input");
+        console.log(shareCode.value);
+        // join the group
+        $.ajax({
+            url: "/api/groups/join/" + shareCode.value,
+            headers: {"X-CSRFToken": csrf_val, 'Authorization': 'Token ' + $.cookie("userToken")},
+            type: "PATCH",
+            success: function (data, textStatus, jqXHR) {
+                getGroups();
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.log('error')
+            }
+        });
+    };
+
+    $('#add-group-button').click((e) => {
         e.preventDefault();
         addGroup();
     });

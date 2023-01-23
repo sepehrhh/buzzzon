@@ -83,7 +83,7 @@ class ListCreateGroup(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return models.Group.objects.filter(Q(owner=self.request.user) | Q(participants__id__contains=self.request.user))
+        return models.Group.objects.filter(Q(owner=self.request.user) | Q(participants=self.request.user)).distinct()
 
 
 class RetrieveUpdateDestroyGroup(generics.RetrieveUpdateDestroyAPIView):
@@ -93,6 +93,21 @@ class RetrieveUpdateDestroyGroup(generics.RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         return get_object_or_404(self.queryset, id=self.kwargs.get('pk'), owner=self.request.user)
+
+
+class JoinGroup(generics.UpdateAPIView):
+    serializer_class = serializers.GroupSerializer
+    queryset = models.Group.objects.all().prefetch_related('participants')
+    permission_classes = (IsAuthenticated,)
+    lookup_url_kwarg = 'share_code'
+    lookup_field = 'share_code'
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user not in instance.participants.all() and request.user != instance.owner:
+            instance.participants.add(request.user)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 def confirm_password_reset(request, first_token, password_reset_token):
@@ -110,11 +125,18 @@ class ListMessage(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         receiver_id = request.query_params.get('user')
+        group_id = request.query_params.get('group')
         if receiver_id:
             # if receiver id found in query params
             receiver_id = int(request.query_params.get('user'))
             messages = models.Message.objects.filter(
                 Q(receiver_id=receiver_id, sender=request.user) | Q(receiver=request.user, sender_id=receiver_id))
+        elif group_id:
+            # if group id found in query params
+            group_id = int(request.query_params.get('group'))
+            messages = models.Message.objects.filter(Q(group_id=group_id) &
+                                                     (Q(group__participants=request.user.id) |
+                                                     Q(group__owner_id=request.user.id)))
         else:
             # if no receiver id found in query params
             messages = models.Message.objects.filter(sender=request.user)

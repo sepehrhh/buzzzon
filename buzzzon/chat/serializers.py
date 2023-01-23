@@ -139,5 +139,6 @@ class MessageSerializer(serializers.ModelSerializer):
             'content',
             'created',
             'type',
+            'group',
         )
         model = models.Message

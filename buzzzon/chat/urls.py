@@ -10,6 +10,7 @@ urlpatterns = [
     path('contacts/<int:pk>', views.RetrieveUpdateDestroyContact.as_view(), name='contact_detail'),
     path('groups', views.ListCreateGroup.as_view(), name='list_group'),
     path('groups/<int:pk>', views.RetrieveUpdateDestroyGroup.as_view(), name='group_detail'),
+    path('groups/join/<str:share_code>', views.JoinGroup.as_view(), name='join_group'),
     path('messages/', views.ListMessage.as_view(), name='list_messages'),
     path('signaling/', views.Signaling.as_view(), name='RTC_signaling')
 ]
