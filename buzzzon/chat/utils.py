@@ -6,4 +6,6 @@ from . import models
 @database_sync_to_async
 def create_chat_message(sender, receiver_id, message):
     content = message['content']
-    return models.Message.objects.create(sender=sender, receiver_id=receiver_id, content=content)
+    message_type = message['type']
+    return models.Message.objects.create(sender=sender, receiver_id=receiver_id,
+                                         content=content, type=message_type)

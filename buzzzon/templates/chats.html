@@ -6,6 +6,7 @@
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
+    <script src="/static/js/lz-string.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" type="text/css"
           rel="stylesheet">
     <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">-->
@@ -172,7 +173,9 @@
         font-size: 12px;
         margin: 8px 0 0;
         display: inline-block;
-        float: right;
+        position: absolute;
+        bottom: 1px;
+        right: 7px;
     }
 
     .received_withd_msg {
@@ -185,6 +188,12 @@
         width: 60%;
     }
 
+    .sent_msg {
+        float: right;
+        width: 46%;
+        max-height: 120px;
+    }
+
     .sent_msg p {
         background: #05728f none repeat scroll 0 0;
         border-radius: 3px;
@@ -195,16 +204,29 @@
         width: 100%;
         overflow-x: hidden;
         word-break: break-all;
+        position: relative;
+    }
+
+    .sent_msg div {
+        background: #05728f none repeat scroll 0 0;
+        border-radius: 3px;
+        font-size: 14px;
+        margin: 0;
+        width: 100%;
+        overflow-x: hidden;
+        word-break: break-all;
+        max-height: 120px;
+        position: relative;
+    }
+
+    .sent_msg embed img {
+        width: 80%;
+        max-height: 120px;
     }
 
     .outgoing_msg {
         overflow: hidden;
         margin: 15px 0 15px;
-    }
-
-    .sent_msg {
-        float: right;
-        width: 46%;
     }
 
     .input_msg_write input {
@@ -392,7 +414,7 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                           <label for="file-input">
                             <i class="fa fa-upload"></i>
                           </label>
-                          <input class="file-input" id="file-input" type="file" hidden/>
+                          <input class="file-input" id="file-input" type="file" hidden onChange="fileUpload(event)"/>
                         </div>
                         <button class="msg_send_btn" type="submit" onclick="sendMessage()"><i
                                 class="fa fa-paper-plane-o"
@@ -533,7 +555,6 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
                 $(".msg_history")[0].innerHTML = '';
 
                 for (var k = 0; k < data.length; k++) {
-                    console.log(data[k].sender, user_details.pk);
                     if (data[k].sender != user_details.pk) {
                         $(".msg_history")[0].innerHTML += '<div class="incoming_msg">\n' +
                             '                        <div class="incoming_msg_img"><img src="https://ptetutorials.com/images/user-profile.png"\n' +
@@ -588,11 +609,55 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
         var time = today.getHours() + ":" + today.getMinutes();
         $(".msg_history")[0].innerHTML += '<div class="outgoing_msg">\n' +
             '                        <div class="sent_msg">\n' +
-            '                            <p>' + message + '<span class="time_date"></span></p>\n' +
+            '                            <p>' + message + '<span class="time_date">' + time + '</span></p>\n' +
             '                            </div>\n' +
             '                    </div>';
         $(".write_msg").val('');
         ws.send(JSON.stringify({"type": 1, "content": message}));
+    };
+
+    var fileUpload = function (event) {
+        var file = event.target.files[0];
+        console.log(file);
+        sendFile(file);
+    }
+
+    function getBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                resolve(reader.result.toString());
+            };
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    async function sendFile(file) {
+        var today = new Date();
+        var time = today.getHours() + ":" + today.getMinutes();
+        var fileType = file.type;
+        const validImageTypes = ['image/gif', 'image/jpeg', 'image/png', 'image/jpg'];
+        if (!validImageTypes.includes(fileType)) {
+            $(".msg_history")[0].innerHTML += '<div class="outgoing_msg">\n' +
+            '                        <div class="sent_msg">\n' +
+            '                            <div>\n' +
+            '                               <embed src="' + URL.createObjectURL(event.target.files[0]) + '">\n' +
+            '                               <span class="time_date">' + time + '</span>\n' +
+            '                            </div>\n' +
+            '                        </div>';
+        } else {
+            $(".msg_history")[0].innerHTML += '<div class="outgoing_msg">\n' +
+            '                        <div class="sent_msg">\n' +
+            '                            <div>\n' +
+            '                               <img src="' + URL.createObjectURL(event.target.files[0]) + '">\n' +
+            '                               <span class="time_date">' + time + '</span>\n' +
+            '                            </div>\n' +
+            '                        </div>';
+        }
+        var base64File = await getBase64(file);
+        var compressed_file = LZString.compress(base64File);
+        ws.send(JSON.stringify({"type": 3, "content": compressed_file}));
     };
 
     var logout = function () {
