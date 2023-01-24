@@ -150,6 +150,8 @@ font-size:16px;font-weight:400;line-height:20px;color:#212529;text-align:left;di
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
 </body>
 <script>
+    if (!$.cookie("userToken"))
+        window.location.href = window.location.origin + "/userAuth/";
     const csrf_val = document.cookie.split("csrftoken=")[1];
     // get the contacts
     $.ajax({

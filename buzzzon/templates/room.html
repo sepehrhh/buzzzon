@@ -135,9 +135,8 @@ font-size:16px;font-weight:400;line-height:20px;color:#212529;text-align:left;di
 </body>
 
 <script>
-    if (!$.cookie("userToken")) {
-        window.location.href = '/userAuth'
-    }
+    if (!$.cookie("userToken"))
+        window.location.href = window.location.origin + "/userAuth/";
     var es = new EventSource('/events/?channel=navid');
 
     es.addEventListener('message', function (e) {
