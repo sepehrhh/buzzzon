@@ -60,6 +60,17 @@
         color: white;
     }
 
+    video#self-video {
+        transform: rotateY(180deg);
+        -webkit-transform:rotateY(180deg); /* Safari and Chrome */
+        -moz-transform:rotateY(180deg); /* Firefox */
+    }
+    video#remote-video {
+        transform: rotateY(180deg);
+        -webkit-transform:rotateY(180deg); /* Safari and Chrome */
+        -moz-transform:rotateY(180deg); /* Firefox */
+    }
+
 </style>
 <body>
 <div>
@@ -176,8 +187,7 @@
     async function start() {
         try {
             // get local stream, show it in self-view and add it to be sent
-            const stream =
-                await navigator.mediaDevices.getUserMedia({video: true});
+            const stream = await navigator.mediaDevices.getUserMedia({video: true});
             stream.getTracks().forEach((track) =>
                 pc.addTrack(track, stream));
             selfView.srcObject = stream;

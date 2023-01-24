@@ -43,6 +43,17 @@
     height: 58px;
     opacity: 0;
   }
+
+  video#self-video {
+    transform: rotateY(180deg);
+    -webkit-transform:rotateY(180deg); /* Safari and Chrome */
+    -moz-transform:rotateY(180deg); /* Firefox */
+  }
+  video#remote-video {
+        transform: rotateY(180deg);
+        -webkit-transform:rotateY(180deg); /* Safari and Chrome */
+        -moz-transform:rotateY(180deg); /* Firefox */
+  }
 }
 
 </style>
@@ -50,7 +61,9 @@
 <p style="margin:280px auto -300px auto;text-align: center">Waiting for Calls...</p>
 <img style="display: block;margin:200px auto -300px auto" src="/static/images/loading.gif">
 <video autoplay id="self-video"></video>
+<p>Self Video</p>
 <video autoplay id="remote-video"></video>
+<p>Remote Video</p>
 <script>
     var callerUsername;
     const SignalingChannel = function () {
@@ -119,9 +132,9 @@
                 urls: "stun:stun.l.google.com:19302"
             },
             {
-                urls: "turn:ali.vahid.click:3478",
-                username: "ehsan",
-                credential: "TaaBeTaa"
+                urls: "turn:test.porslinedev.com:3478",
+                username: "username",
+                credential: "password"
             }
         ]
     };

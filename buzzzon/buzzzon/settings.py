@@ -73,11 +73,11 @@ WSGI_APPLICATION = 'buzzzon.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'buzzzon',
-        'USER': 'buzzzon',
-        'PASSWORD': 'buzzzon',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'buzzzon'),
+        'USER': os.environ.get('DB_USER', 'buzzzon'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'buzzzon'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -183,10 +183,9 @@ EVENTSTREAM_STORAGE_CLASS = 'django_eventstream.storage.DjangoModelStorage'
 ASGI_APPLICATION = 'buzzzon.asgi.application'
 CHANNEL_LAYERS = {
     'default': {
-        # 'BACKEND': 'asgi_redis.RedisChannelLayer',
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('localhost', 6379)],
+            'hosts': [(os.environ.get('REDIS_HOST', 'localhost'), os.environ.get('REDIS_PORT', 6379))],
         },
     }
 }
