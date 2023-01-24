@@ -31,3 +31,4 @@ environment.txt
 .idea/
 
 .DS_Store
+*.env

@@ -180,7 +180,7 @@ GRIP_URL = 'http://127.0.0.1:5561'
 # GRIP_URL = 'http://api.fanout.io/realm/your-realm?iss=e85043bf&key=9Vni/d2qFsG4HxmvetmMHA=='
 EVENTSTREAM_STORAGE_CLASS = 'django_eventstream.storage.DjangoModelStorage'
 
-ASGI_APPLICATION = 'buzzzon.asgi.application'
+ASGI_APPLICATION = 'buzzzon.routing.application'
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',

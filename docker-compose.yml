@@ -47,7 +47,7 @@ services:
   nginx:
     build:
       context: nginx
-      dockerfile: nginx/Dockerfile
+      dockerfile: Dockerfile
     command: nginx -g 'daemon off';
     volumes:
       - static_volume:/usr/src/app/buzzzon/static/
