@@ -79,6 +79,12 @@ class ContactRelatedField(serializers.RelatedField):
     def to_representation(self, value):
         return UserSerializer(value).data
 
+    def to_internal_value(self, email):
+        user = models.User.objects.filter(email=email).first()
+        if user is None:
+            raise serializers.ValidationError('Contact does not exist')
+        return user
+
 
 class ContactSerializer(serializers.ModelSerializer):
     contact = ContactRelatedField(queryset=models.Contact.objects.all())
@@ -101,6 +107,14 @@ class ContactSerializer(serializers.ModelSerializer):
         else:
             data['owner'] = None
         return super(ContactSerializer, self).to_internal_value(data)
+
+    def validate(self, attrs):
+        if not self.instance \
+                and models.Contact.objects.filter(owner=attrs['owner'], contact=attrs['contact']).exists():
+            raise serializers.ValidationError('Contact already exists')
+        if attrs['owner'] == attrs['contact']:
+            raise serializers.ValidationError('Contact and owner can not be same')
+        return attrs
 
 
 class GroupSerializer(serializers.ModelSerializer):
