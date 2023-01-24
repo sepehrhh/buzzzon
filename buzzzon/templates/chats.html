@@ -651,7 +651,7 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
         var index = $('.chat_people').index(data);
         var contact_id = contacts_list[index].contact.id;
         getConversation(contact_id);
-        ws = new WebSocket("ws://127.0.0.1:8005/ws/chat/" + contact_id + "/" + "?token=" + $.cookie("userToken"));
+        ws = new WebSocket("wss://hapesotrik.ga/ws/chat/" + contact_id + "/" + "?token=" + $.cookie("userToken"));
         ws.onmessage = function (event) {
             var json_data = JSON.parse(event.data);
             var today = new Date();
@@ -695,7 +695,7 @@ font-size:16px;font-weight:400;line-height:30px;color:#212529;text-align:left;di
         var index = $('.chat_groups').index(data);
         var group_id = groups_list[index].id;
         getGroupConversation(group_id);
-        ws = new WebSocket("ws://127.0.0.1:8005/ws/chat/group/" + groups_list[index].share_code + "/" + "?token=" + $.cookie("userToken"));
+        ws = new WebSocket("wss://hapesotrik.ga/ws/chat/group/" + groups_list[index].share_code + "/" + "?token=" + $.cookie("userToken"));
         ws.onmessage = function (event) {
             var json_data = JSON.parse(event.data);
             var today = new Date();

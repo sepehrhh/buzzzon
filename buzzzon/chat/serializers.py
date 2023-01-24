@@ -75,6 +75,7 @@ class RoomSerializer(serializers.ModelSerializer):
         model = models.Room
         validators = []  # remove default validation
 
+
 class ContactRelatedField(serializers.RelatedField):
     def to_representation(self, value):
         return UserSerializer(value).data
@@ -115,6 +116,13 @@ class ContactSerializer(serializers.ModelSerializer):
         if attrs['owner'] == attrs['contact']:
             raise serializers.ValidationError('Contact and owner can not be same')
         return attrs
+
+    def create(self, validated_data):
+        instance = super(ContactSerializer, self).create(validated_data)
+        models.Contact.objects.create(owner=instance.contact, contact=instance.owner,
+                                      contact_name=instance.contact_name, detail=instance.detail,
+                                      created=instance.created)
+        return instance
 
 
 class GroupSerializer(serializers.ModelSerializer):
